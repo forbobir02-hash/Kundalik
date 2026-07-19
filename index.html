@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Söz Sehri // Mening She'rlarim</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Georgia', serif; }
+        body { display: flex; height: 100vh; background-color: #0f0f14; color: #f1ebd9; overflow: hidden; }
+
+        /* 1. CHAP TOMON: SHE'RLAR RO'YXATI */
+        .sidebar {
+            width: 350px; background-color: #16161e; border-right: 1px solid #2a2a35;
+            display: flex; flex-direction: column; height: 100%;
+        }
+        .sidebar-header { padding: 25px 20px; border-bottom: 1px solid #2a2a35; }
+        .sidebar-header h2 { font-size: 22px; color: #d4af37; letter-spacing: 1px; }
+        .sidebar-header p { font-size: 12px; color: #7e7e8c; font-style: italic; margin-top: 5px; }
+        
+        .poem-list { flex: 1; overflow-y: auto; padding: 15px; }
+        .poem-item {
+            background: #1e1e27; padding: 15px; border-radius: 8px; margin-bottom: 12px;
+            cursor: pointer; border-left: 3px solid transparent; transition: all 0.2s;
+        }
+        .poem-item:hover, .poem-item.active {
+            border-left-color: #d4af37; background: #252532; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .poem-item h4 { font-size: 16px; color: #fff; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .poem-item p { font-size: 12px; color: #8a8a98; }
+
+        .add-btn-container { padding: 15px; border-top: 1px solid #2a2a35; }
+        .btn {
+            width: 100%; padding: 12px; background: transparent; color: #d4af37;
+            border: 1px solid #d4af37; border-radius: 6px; cursor: pointer;
+            font-weight: bold; font-size: 14px; text-transform: uppercase; transition: all 0.2s;
+        }
+        .btn:hover { background: #d4af37; color: #0f0f14; }
+
+        /* 2. O'NG TOMON: INTERFEYS VA EDITING */
+        .main-content { flex: 1; display: flex; flex-direction: column; height: 100%; background: #111116; }
+        .workspace { flex: 1; display: flex; flex-direction: column; padding: 40px; overflow-y: auto; align-items: center; }
+        
+        .poem-editor { width: 100%; max-width: 650px; display: flex; flex-direction: column; gap: 20px; }
+        .input-title {
+            background: transparent; border: none; border-bottom: 1px solid #2a2a35;
+            color: #fff; font-size: 28px; padding-bottom: 10px; outline: none; width: 100%;
+            font-weight: bold; text-align: center;
+        }
+        .input-title::placeholder { color: #444455; }
+        
+        .textarea-body {
+            background: transparent; border: none; color: #f1ebd9; font-size: 18px;
+            line-height: 1.8; resize: none; min-height: 300px; outline: none; width: 100%;
+            text-align: center; font-style: italic;
+        }
+        .textarea-body::placeholder { color: #444455; }
+
+        /* AUDIO DIKTOFON TIZIMI */
+        .audio-section {
+            display: flex; align-items: center; justify-content: center; gap: 20px;
+            margin-top: 20px; padding: 20px; background: #16161e; border-radius: 12px; border: 1px solid #2a2a35;
+        }
+        .rec-btn {
+            background: #aa2222; color: white; border: none; width: 50px; height: 50px;
+            border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 12px;
+            display: flex; align-items: center; justify-content: center; transition: all 0.3s;
+        }
+        .rec-btn.recording { background: #ff3333; animation: pulse 1.5s infinite; }
+        audio { flex: 1; max-width: 400px; }
+
+        .top-bar { width: 100%; max-width: 650px; display: flex; justify-content: space-between; margin-bottom: 20px; }
+        .del-btn { border-color: #aa2222; color: #aa2222; width: auto; padding: 8px 15px; }
+        .del-btn:hover { background: #aa2222; color: white; }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.5); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 51, 51, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR: SHE'RLAR RO'YXATI -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Ilhom Buloqlari</h2>
+            <p>Yozma va og'zaki she'rlar arxivi</p>
+        </div>
+        <div class="poem-list" id="poemList">
+            <!-- She'rlar dinamik ravishda shu yerga tushadi -->
+        </div>
+        <div class="add-btn-container">
+            <button class="btn" id="newPoemBtn">+ Yangi She'r</button>
+        </div>
+    </div>
+
+    <!-- MAIN WORKSPACE: INTEGRATSIYALASHGAN INTERFEYS -->
+    <div class="main-content">
+        <div class="workspace">
+            <div class="top-bar">
+                <button class="btn" id="savePoemBtn" style="width:auto; padding: 8px 25px;">💾 Saqlash</button>
+                <button class="btn del-btn" id="deletePoemBtn">O'chirish</button>
+            </div>
+            
+            <div class="poem-editor">
+                <input type="text" class="input-title" id="poemTitle" placeholder="She'r sarlavhasi...">
+                <textarea class="textarea-body" id="poemBody" placeholder="Ushbu yerga she'ringizni misralarini yozing..."></textarea>
+                
+                <!-- OVOZLI YAZIB OLISH (OG'ZAKI REJIM) -->
+                <div class="audio-section">
+                    <button class="rec-btn" id="recordAudioBtn">REC</button>
+                    <div id="audioStatus" style="font-size: 13px; color:#8a8a98;">Ovoz yozilmagan</div>
+                    <audio id="audioPlayer" controls style="display: none;"></audio>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // GLOBAL O'ZGARUVCHILAR VA DATABASE (IndexedDB + localStorage)
+        let db;
+        let poems = JSON.parse(localStorage.getItem('poems_meta')) || [];
+        let currentPoemId = null;
+        let mediaRecorder;
+        let audioChunks = [];
+        let currentAudioBlob = null;
+
+        // Ovozli fayllarni saqlash uchun IndexedDB ni ishga tushiramiz
+        const request = indexedDB.open("PoemAudioDB", 1);
+        request.onupgradeneeded = (e) => {
+            db = e.target.result;
+            db.createObjectStore("audios", { keyPath: "id" });
+        };
+        request.onsuccess = (e) => { 
+            db = e.target.result; 
+            renderPoemList();
+            if(poems.length > 0) loadPoem(poems[0].id);
+            else initNewPoem();
+        };
+
+        const poemList = document.getElementById('poemList');
+        const poemTitle = document.getElementById('poemTitle');
+        const poemBody = document.getElementById('poemBody');
+        const recordAudioBtn = document.getElementById('recordAudioBtn');
+        const audioStatus = document.getElementById('audioStatus');
+        const audioPlayer = document.getElementById('audioPlayer');
+
+        // YANGI SHE'R XONASI
+        function initNewPoem() {
+            currentPoemId = 'poem_' + Date.now();
+            poemTitle.value = '';
+            poemBody.value = '';
+            currentAudioBlob = null;
+            audioPlayer.style.display = 'none';
+            audioStatus.textContent = "Ovoz yozilmagan";
+            document.querySelectorAll('.poem-item').forEach(i => i.classList.remove('active'));
+        }
+
+        // SHE'RLAR RO'YXATINI CHIZISH
+        function renderPoemList() {
+            poemList.innerHTML = '';
+            poems.forEach(poem => {
+                const item = document.createElement('div');
+                item.className = `poem-item ${poem.id === currentPoemId ? 'active' : ''}`;
+                item.onclick = () => loadPoem(poem.id);
+                item.innerHTML = `
+                    <h4>${poem.title || 'Sarlavhasiz she\'r'}</h4>
+                    <p>📅 ${poem.date} ${poem.hasAudio ? '🎙️ [Ovozli]' : ''}</p>
+                `;
+                poemList.appendChild(item);
+            });
+        }
+
+        // BEMALOL TUGMASINI BOSIB SAQLASH
+        function savePoem() {
+            if(!poemTitle.value.trim() && !poemBody.value.trim()) return;
+
+            const existingIndex = poems.findIndex(p => p.id === currentPoemId);
+            const poemMeta = {
+                id: currentPoemId,
+                title: poemTitle.value.trim(),
+                date: new Date().toLocaleDateString('uz-UZ'),
+                body: poemBody.value,
+                hasAudio: currentAudioBlob !== null
+            };
+
+            if(existingIndex > -1) poems[existingIndex] = poemMeta;
+            else poems.unshift(poemMeta);
+
+            localStorage.setItem('poems_meta', JSON.stringify(poems));
+
+            if (currentAudioBlob) {
+                const transaction = db.transaction(["audios"], "readwrite");
+                transaction.objectStore("audios").put({ id: currentPoemId, blob: currentAudioBlob });
+            }
+
+            renderPoemList();
+            alert("She'r muvaffaqiyatli saqlandi!");
+        }
+
+        // TANLANGAN SHE'RNI YUKLASH
+        function loadPoem(id) {
+            currentPoemId = id;
+            const poem = poems.find(p => p.id === id);
+            if(!poem) return;
+
+            poemTitle.value = poem.title;
+            poemBody.value = poem.body;
+            
+            renderPoemList();
+
+            // Ovozini tekshirish
+            audioPlayer.style.display = 'none';
+            audioStatus.textContent = "Yuklanmoqda...";
+            currentAudioBlob = null;
+
+            const transaction = db.transaction(["audios"], "readonly");
+            const getReq = transaction.objectStore("audios").get(id);
+            getReq.onsuccess = () => {
+                if(getReq.result) {
+                    currentAudioBlob = getReq.result.blob;
+                    audioPlayer.src = URL.createObjectURL(currentAudioBlob);
+                    audioPlayer.style.display = 'block';
+                    audioStatus.textContent = "🎙️ Ovozli ijro tayyor:";
+                } else {
+                    audioStatus.textContent = "Ovoz yozilmagan";
+                }
+            };
+        }
+
+        // DIKTOFON MANTIQLARI (OG'ZAKI REJIM)
+        recordAudioBtn.addEventListener('click', async () => {
+            if (!mediaRecorder || mediaRecorder.state === "inactive") {
+                audioChunks = [];
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    
+                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                    mediaRecorder.onstop = () => {
+                        currentAudioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+                        audioPlayer.src = URL.createObjectURL(currentAudioBlob);
+                        audioPlayer.style.display = 'block';
+                        audioStatus.textContent = "🎙️ Yangi ovoz yozildi (Saqlashni bosing):";
+                        stream.getTracks().forEach(track => track.stop());
+                    };
+
+                    mediaRecorder.start();
+                    recordAudioBtn.textContent = "STOP";
+                    recordAudioBtn.classList.add('recording');
+                    audioStatus.textContent = "🔴 Ovoz yozilmoqda, she'rni o'qing...";
+                } catch (err) {
+                    alert("Mikrofonga ruxsat berilmadi!");
+                }
+            } else {
+                mediaRecorder.stop();
+                recordAudioBtn.textContent = "REC";
+                recordAudioBtn.classList.remove('recording');
+            }
+        });
+
+        // SHE'RNI O'CHIRISH
+        document.getElementById('deletePoemBtn').addEventListener('click', () => {
+            if(confirm("Ushbu she'rni o'chirib tashlamoqchimisiz?")) {
+                poems = poems.filter(p => p.id !== currentPoemId);
+                localStorage.setItem('poems_meta', JSON.stringify(poems));
+                
+                const transaction = db.transaction(["audios"], "readwrite");
+                transaction.objectStore("audios").delete(currentPoemId);
+                
+                initNewPoem();
+                renderPoemList();
+            }
+        });
+
+        document.getElementById('newPoemBtn').addEventListener('click', initNewPoem);
+        document.getElementById('savePoemBtn').addEventListener('click', savePoem);
+    </script>
+</body>
+</html>
