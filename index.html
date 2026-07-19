@@ -401,7 +401,7 @@
             } else { mediaRecorder.stop(); recordAudioBtn.textContent = "REC"; recordAudioBtn.classList.remove('recording'); }
         });
 
-        // ENGL YANGI GEMINI-2.5-FLASH MODELIGA SOZLANGAN INTEGRATSIYA
+        // Hozirgi kunda eng faol va barqaror bo'lgan Gemini 2.0 Flash modeliga moslashtirilgan qism
         document.getElementById('generatePosterBtn').addEventListener('click', async () => {
             const key = geminiApiKey.value.trim();
             const title = poemTitle.value.trim() || 'Sarlavhasiz';
@@ -410,7 +410,7 @@
             if (!key) { alert("Iltimos, avval chap paneldagi katakka Gemini API kalitingizni kiriting!"); return; }
             if (!body) { alert("Poster yaratish uchun avval she'r matnini yozing!"); return; }
 
-            posterPreview.innerHTML = "<div style='padding:40px; text-align:center; color:#b38f43; font-style:italic;'>🤖 Gemini she'r falsafasini tahlil qilmoqda va san'at asari chizmoqda. Kuting...</div>";
+            posterPreview.innerHTML = "<div style='padding:40px; text-align:center; color:#b38f43; font-style:italic;'>🤖 Gemini 2.0 she'r mazmunini tahlil qilmoqda va unga mos grafik dizayn chizmoqda...</div>";
             posterModal.style.display = 'flex';
 
             const promptText = `Siz professional grafik dizaynersiz. Sizga taqdim etilgan o'zbekcha she'r mazmunidan kelib chiqib, bitta chiroyli mustaqil HTML va inline CSS kodli vizual poster blok yarating.
@@ -421,8 +421,8 @@
             4. Javobingizda faqat va faqat toza HTML kod bo'lshin, hech qanday markdown belgilari (\`\`\`html) yoki qo'shimcha izohlar bo'lmasin.`;
 
             try {
-                // Yangi gemini-2.5-flash modeli barqaror endpoint orqali chaqirildi
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
+                // Yangi va faol model: gemini-2.0-flash
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
                 
                 const response = await fetch(url, {
                     method: "POST",
@@ -443,7 +443,7 @@
 
                 let aiHtml = data.candidates[0].content.parts[0].text;
                 
-                // Kodni markdownlardan tozalash
+                // Markdownlarni olib tashlash va kodni tozalash
                 aiHtml = aiHtml.replace(/```html/g, "").replace(/```/g, "").trim();
                 
                 const iframe = document.createElement('iframe');
