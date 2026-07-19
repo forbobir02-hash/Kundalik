@@ -529,13 +529,77 @@
             }
         });
 
-        // TO'G'RILANGAN KAFOLATLANGAN RASM YUKLASH FUNKSIYASI (ATROFDAGI QORA CHIZIQLARSIZ)
-        document.getElementById('downloadPosterBtn').addEventListener('click', () => {
+        // // YAKUNIY VA KAFOLATLANGAN RASM YUKLASH FUNKSIYASI (SANDBOX/IFRAME SIZ)
+        document.getElementById('downloadPosterBtn').addEventListener('click', async () => {
             if (!rawAiHtml) { alert("Avval posterni render qiling!"); return; }
 
             const ratioValues = posterRatio.value.split('/');
-            const width = 1200; // Yuqori sifatli rasm asosi
+            const scale = 2; // Rasm sifatini oshirish (yuqori aniqlik)
+            const width = 1200 * scale; 
             const height = Math.round(width * (parseFloat(ratioValues[1]) / parseFloat(ratioValues[0])));
+
+            // Modalni vaqtincha yopamiz va preview elementini suratga olish uchun tayyorlaymiz
+            const modal = document.getElementById('posterModal');
+            const previewArea = document.getElementById('posterPreview');
+            const iframe = previewArea.querySelector('iframe');
+            
+            if (!iframe) { alert("Xatolik: Poster render qilinmagan."); return; }
+
+            // Vaqtincha modalni yashiramiz va preview elementini sahifada majburlab cho'zamiz
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto'; // Suratga olish vaqtida skrollni yoqish
+            
+            previewArea.style.position = 'fixed';
+            previewArea.style.top = '0';
+            previewArea.style.left = '0';
+            previewArea.style.width = width + 'px';
+            previewArea.style.height = height + 'px';
+            previewArea.style.zIndex = '9999';
+            previewArea.style.maxWidth = 'none';
+            previewArea.style.maxHeight = 'none';
+            previewArea.style.aspectRatio = 'auto';
+            previewArea.style.boxShadow = 'none';
+            previewArea.style.border = 'none';
+            previewArea.style.transform = 'scale(1)';
+
+            // html2canvas yordamida aynan sahifada cho'zilgan elementdan surat olamiz
+            try {
+                // Iframe ichidagi element yuklanishini ozgina kutamiz
+                await new Promise(r => setTimeout(r, 100));
+                const targetElement = iframe.contentWindow.document.body;
+
+                const canvas = await html2canvas(targetElement, {
+                    width: width,
+                    height: height,
+                    scale: 1, // Biz allaqachon elementni katta cho'zdik
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: null,
+                    scrollX: 0,
+                    scrollY: 0
+                });
+
+                const selectedFormat = exportFormat.value;
+                const mimeType = selectedFormat === 'png' ? 'image/png' : 'image/jpeg';
+                const extension = selectedFormat === 'png' ? '.png' : '.jpg';
+
+                const imgData = canvas.toDataURL(mimeType, 0.95);
+                
+                const a = document.createElement('a');
+                a.href = imgData;
+                a.download = (poemTitle.value.trim() || 'poster') + extension;
+                a.click();
+                
+            } catch (err) {
+                alert("Rasmga aylantirishda xatolik: " + err.message);
+            } finally {
+                // Hamma narsani o'z holatiga qaytaramiz
+                previewArea.style = '';
+                updatePreviewRatio(); // Tomonlar nisbatini qayta yangilash
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            }
+        });
 
             // Yashirin sandbox iframe orqali toza muhitda render qilish
             sandboxContainer.innerHTML = '';
