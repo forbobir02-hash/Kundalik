@@ -229,6 +229,7 @@
         /* html2canvas to'g'ri ishlashi uchun yashirin renderlash bloki */
         #sandboxContainer {
             position: absolute; left: -9999px; top: -9999px;
+            width: 0; height: 0; overflow: hidden;
         }
 
         @media print {
@@ -337,7 +338,7 @@
         let mediaRecorder;
         let audioChunks = [];
         let currentAudioBlob = null;
-        let rawAiHtml = ""; // AI yaratgan toza kodni saqlash uchun global o'zgaruvchi
+        let rawAiHtml = ""; 
 
         const themeToggleBtn = document.getElementById('themeToggleBtn');
         const geminiApiKey = document.getElementById('geminiApiKey');
@@ -454,7 +455,7 @@
             posterModal.style.display = 'flex';
         });
 
-        // GENERATSIYA
+        // AI RENDERING
         document.getElementById('startAiRenderBtn').addEventListener('click', async () => {
             const key = geminiApiKey.value.trim();
             const title = poemTitle.value.trim() || 'Sarlavhasiz';
@@ -463,7 +464,7 @@
 
             if (!key) { alert("Iltimos, avval chap paneldagi katakka Gemini API kalitingizni kiriting!"); return; }
 
-            posterPreview.innerHTML = "<div style='padding:40px; text-align:center; color:#b38f43; font-style:italic;'>🤖 Gemini 3.5 format talablariga moslab she'riy grafik dizayn render qilmoqda...</div>";
+            posterPreview.innerHTML = "<div style='padding:40px; text-align:center; color:#b38f43; font-style:italic;'>🤖 Gemini format talablariga moslab she'riy grafik dizayn render qilmoqda...</div>";
 
             const promptText = `Siz professional grafik dizaynersiz. Quyida taqdim etilgan o'zbekcha she'r matni va uning sarlavhasini o'rganib chiqib, bitta chiroyli, mustaqil HTML va inline CSS kodli vizual poster yarating.
 
@@ -481,7 +482,7 @@
             5. Javobingizda faqat va faqat toza HTML kod bo'lsin, hech qanday markdown belgilari (\`\`\`html) yoki qo'shimcha izohlar bo'lmasin.`;
 
             try {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${key}`;
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
                 
                 const response = await fetch(url, {
                     method: "POST",
@@ -495,10 +496,7 @@
                 }
 
                 const data = await response.json();
-                
-                if (!data.candidates || data.candidates.length === 0) {
-                    throw new Error("Gemini javob qaytara olmadi.");
-                }
+                if (!data.candidates || data.candidates.length === 0) throw new Error("Gemini javob qaytara olmadi.");
 
                 rawAiHtml = data.candidates[0].content.parts[0].text;
                 rawAiHtml = rawAiHtml.replace(/```html/g, "").replace(/```/g, "").trim();
@@ -525,50 +523,70 @@
             }
         });
 
-        // PNG / JPEG RASM SHAKLIDA YUKLAB OLISH FUNKSIYASI
+        // TO'G'RILANGAN RASM YUKLASH FUNKSIYASI
         document.getElementById('downloadPosterBtn').addEventListener('click', () => {
             if (!rawAiHtml) { alert("Avval posterni render qiling!"); return; }
 
-            // 1. Yashirin render blokini tozalash va o'lchamlarini nisbatga qarab sozlash
-            sandboxContainer.innerHTML = rawAiHtml;
-            const targetEl = sandboxContainer.firstElementChild;
-            
-            if (!targetEl) { alert("Render kodini o'qib bo'lmadi."); return; }
-
-            // Nisbatga qarab eksport o'lchamini aniqlash (yuqori aniqlik uchun asos 1200px)
             const ratioValues = posterRatio.value.split('/');
             const width = 1200;
             const height = Math.round(width * (parseFloat(ratioValues[1]) / parseFloat(ratioValues[0])));
 
-            targetEl.style.width = width + "px";
-            targetEl.style.height = height + "px";
-            targetEl.style.position = "relative";
+            sandboxContainer.innerHTML = '';
+            const frame = document.createElement('iframe');
+            frame.style.width = width + "px";
+            frame.style.height = height + "px";
+            frame.style.position = "absolute";
+            frame.style.visibility = "hidden";
+            frame.style.border = "none";
+            sandboxContainer.appendChild(frame);
 
-            const selectedFormat = exportFormat.value; // 'png' yoki 'jpeg'
-            const mimeType = selectedFormat === 'png' ? 'image/png' : 'image/jpeg';
-            const extension = selectedFormat === 'png' ? '.png' : '.jpg';
+            const frameDoc = frame.contentWindow.document;
+            frameDoc.open();
+            frameDoc.write(`
+                <html>
+                <head>
+                    <style>
+                        html, body { 
+                            margin: 0; padding: 0; 
+                            width: ${width}px; height: ${height}px; 
+                            overflow: hidden; 
+                            box-sizing: border-box;
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${rawAiHtml}
+                </body>
+                </html>
+            `);
+            frameDoc.close();
 
-            // 2. Kutubxona yordamida DOM elementni rasmga o'tkazish
-            html2canvas(targetEl, {
-                width: width,
-                height: height,
-                scale: 2, // Sifatni yanada mukammal qilish uchun (Retina effekt)
-                useCORS: true,
-                allowTaint: true
-            }).then(canvas => {
-                const imgData = canvas.toDataURL(mimeType, 0.95);
-                
-                // Yuklab olish havolasini yaratish
-                const a = document.createElement('a');
-                a.href = imgData;
-                a.download = (poemTitle.value.trim() || 'poster') + extension;
-                a.click();
+            setTimeout(() => {
+                const targetBody = frameDoc.body;
+                const selectedFormat = exportFormat.value;
+                const mimeType = selectedFormat === 'png' ? 'image/png' : 'image/jpeg';
+                const extension = selectedFormat === 'png' ? '.png' : '.jpg';
 
-                // Tozalash
-                sandboxContainer.innerHTML = "";
-            }).catch(err => {
-                alert("Rasmga aylantirishda xatolik yuz berdi: " + err.message);
-            });
+                html2canvas(targetBody, {
+                    width: width,
+                    height: height,
+                    scale: 1, 
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: null 
+                }).then(canvas => {
+                    const imgData = canvas.toDataURL(mimeType, 0.95);
+                    
+                    const a = document.createElement('a');
+                    a.href = imgData;
+                    a.download = (poemTitle.value.trim() || 'poster') + extension;
+                    a.click();
+
+                    sandboxContainer.innerHTML = "";
+                }).catch(err => {
+                    alert("Rasmga aylantirishda xatolik yuz berdi: " + err.message);
+                });
+            }, 300); 
         });
 
         document.getElementById('closeModalBtn').addEventListener('click', () => posterModal.style.display = 'none');
