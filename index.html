@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Devoni Ilhom AI // Pro Studiya</title>
+    <!-- HTML elementlarini rasmga (PNG/JPEG) aylantirish uchun kutubxona -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Georgia', serif; }
         
@@ -209,10 +211,24 @@
             display: flex; flex-direction: column; gap: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             max-height: 90vh; overflow-y: auto;
         }
+        
+        .options-row {
+            display: flex; gap: 10px; background: rgba(179, 143, 67, 0.05); padding: 10px; border-radius: 4px; border: 1px solid var(--border-color);
+        }
+        .option-select {
+            flex: 1; padding: 6px; font-size: 12px; font-family: sans-serif; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-card); color: var(--text-main); outline: none;
+        }
+
         .poster-preview-area {
             width: 100%; aspect-ratio: 1 / 1.4; border: 1px solid var(--border-color);
             background: white; border-radius: 4px; overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: aspect-ratio 0.3s ease;
+            position: relative;
+        }
+
+        /* html2canvas to'g'ri ishlashi uchun yashirin renderlash bloki */
+        #sandboxContainer {
+            position: absolute; left: -9999px; top: -9999px;
         }
 
         @media print {
@@ -223,6 +239,9 @@
     </style>
 </head>
 <body>
+
+    <!-- YASHIRIN SANDBOX (Rasmga eksport qilish uchun) -->
+    <div id="sandboxContainer"></div>
 
     <!-- SIDEBAR -->
     <div class="sidebar">
@@ -263,7 +282,7 @@
             <div class="top-bar">
                 <div class="action-group">
                     <button class="btn" id="savePoemBtn" style="padding: 10px 25px;">💾 Saqlash</button>
-                    <button class="btn ai-btn" id="generatePosterBtn">✨ AI Poster Yasash</button>
+                    <button class="btn ai-btn" id="generatePosterBtn">✨ AI Poster Sozlamalari</button>
                 </div>
                 <button class="btn del-btn" id="deletePoemBtn">O'chirish</button>
             </div>
@@ -285,10 +304,28 @@
     <div class="modal" id="posterModal">
         <div class="modal-content">
             <h3 style="text-align:center; color: var(--accent-gold);">Gemini San'at Asari</h3>
+            
+            <div class="options-row">
+                <select class="option-select" id="posterRatio">
+                    <option value="1/1.4">Knijniy (A4 / Istoriya) - 1:1.4</option>
+                    <option value="1/1">Kvadrat (Post) - 1:1</option>
+                    <option value="1.4/1">Albomniy (Prezentatsiya) - 1.4:1</option>
+                </select>
+                <!-- FORMAT TANLASH (PNG / JPEG) -->
+                <select class="option-select" id="exportFormat">
+                    <option value="png">Format: PNG (Shaffof/Tiniq)</option>
+                    <option value="jpeg">Format: JPEG (Yengil hajm)</option>
+                </select>
+            </div>
+
+            <button class="btn ai-btn" id="startAiRenderBtn">🎨 Tasvirni Render Qilish</button>
+
             <div class="poster-preview-area" id="posterPreview"></div>
+            
             <div class="btn-group-row">
-                <button class="btn" id="printPosterBtn" style="flex:1;">🖨️ PDF / Yuklab Olish</button>
-                <button class="btn del-btn" id="closeModalBtn" style="flex:1;">Yopish</button>
+                <button class="btn" id="downloadPosterBtn" style="flex:1; background: var(--accent-gold); color: white;">💾 Rasm Qilib Yuklash</button>
+                <button class="btn" id="printPosterBtn" style="flex:0.5;">🖨️ PDF</button>
+                <button class="btn del-btn" id="closeModalBtn" style="flex:0.5;">Yopish</button>
             </div>
         </div>
     </div>
@@ -300,11 +337,15 @@
         let mediaRecorder;
         let audioChunks = [];
         let currentAudioBlob = null;
+        let rawAiHtml = ""; // AI yaratgan toza kodni saqlash uchun global o'zgaruvchi
 
         const themeToggleBtn = document.getElementById('themeToggleBtn');
         const geminiApiKey = document.getElementById('geminiApiKey');
         const posterModal = document.getElementById('posterModal');
         const posterPreview = document.getElementById('posterPreview');
+        const posterRatio = document.getElementById('posterRatio');
+        const exportFormat = document.getElementById('exportFormat');
+        const sandboxContainer = document.getElementById('sandboxContainer');
 
         geminiApiKey.value = localStorage.getItem('gemini_api_key') || '';
         geminiApiKey.addEventListener('input', () => {
@@ -401,32 +442,43 @@
             } else { mediaRecorder.stop(); recordAudioBtn.textContent = "REC"; recordAudioBtn.classList.remove('recording'); }
         });
 
-        // TUZATILGAN GENERATSIYA TIZIMI
-        document.getElementById('generatePosterBtn').addEventListener('click', async () => {
+        posterRatio.addEventListener('change', () => {
+            posterPreview.style.aspectRatio = posterRatio.value;
+        });
+
+        document.getElementById('generatePosterBtn').addEventListener('click', () => {
+            const body = poemBody.value.trim();
+            if (!body) { alert("Poster yaratish uchun avval she'r matnini yozing!"); return; }
+            posterPreview.innerHTML = "<div style='padding:40px; text-align:center; color:var(--text-muted); font-style:italic;'>O'lcham va formatni tanlang, so'ng 'Tasvirni Render Qilish' tugmasini bosing.</div>";
+            posterPreview.style.aspectRatio = posterRatio.value;
+            posterModal.style.display = 'flex';
+        });
+
+        // GENERATSIYA
+        document.getElementById('startAiRenderBtn').addEventListener('click', async () => {
             const key = geminiApiKey.value.trim();
             const title = poemTitle.value.trim() || 'Sarlavhasiz';
             const body = poemBody.value.trim();
+            const selectedRatio = posterRatio.value;
 
             if (!key) { alert("Iltimos, avval chap paneldagi katakka Gemini API kalitingizni kiriting!"); return; }
-            if (!body) { alert("Poster yaratish uchun avval she'r matnini yozing!"); return; }
 
-            posterPreview.innerHTML = "<div style='padding:40px; text-align:center; color:#b38f43; font-style:italic;'>🤖 Gemini 3.5 siz yozgan she'r matnini chuqur tahlil qilib, unga mos vizual san'at asari yaratmoqda...</div>";
-            posterModal.style.display = 'flex';
+            posterPreview.innerHTML = "<div style='padding:40px; text-align:center; color:#b38f43; font-style:italic;'>🤖 Gemini 3.5 format talablariga moslab she'riy grafik dizayn render qilmoqda...</div>";
 
-            // PROMPT YANGILANDI: Endi ${body} ham to'liq uzatiladi va yangi she'r to'qimaslik qat'iy talab qilinadi.
-            const promptText = `Siz professional grafik va badiiy dizaynersiz. Quyida taqdim etilgan o'zbekcha she'r matni va uning sarlavhasini chuqur o'rganib chiqib, she'rning haqiqiy ma'nosi, falsafasi va ichki kayfiyatini aks ettiruvchi bitta mukammal, mustaqil HTML va inline CSS kodli vizual poster blok yarating.
+            const promptText = `Siz professional grafik dizaynersiz. Quyida taqdim etilgan o'zbekcha she'r matni va uning sarlavhasini o'rganib chiqib, bitta chiroyli, mustaqil HTML va inline CSS kodli vizual poster yarating.
 
-            DIQQAT ENGL ASOSIY SHART: Siz mutlaqo o'zingizdan yangi she'r to'qimasligingiz shart! Quyida berilgan asl she'r matnini matnma-matn, satrma-satr o'zgarishsiz poster ichiga joylashtiring.
+            DIQQAT QAT'IY TALAB: Siz o'zingizdan umuman yangi she'r yozmaysiz. Berilgan asl she'r matnini o'zgarishsiz, to'liqligicha poster ichiga joylashtirasiz.
 
             She'r Sarlavhasi: ${title}
             She'rning Asl Matni:
             ${body}
 
-            Dizayn talablari:
-            1. Butun poster faqat bitta asosiy container div ichida mukammal yakunlangan bo'lsin. Fon ranglari, chiroyli gradientlar, nozik nafis oltin yoki mavzu ruhiga mos keladigan pastel ranglar palitrasi orqali she'r kayfiyatini ko'rsating.
-            2. Blok markazida she'rning sarlavhasi (${title}) va uning ostida yuqoridagi she'r matni (${body}) to'liq, satrma-satr, chiroyli o'qiladigan va nafis shriftda (Georgia, serif yoki mukammal mos keluvchi shriftlar) joylashsin.
-            3. Poster atrofida milliy naqshlar, ramziy badiiy bezaklar yoki mavzuga mos ramziy grafik elementlar yaratish uchun faqat inline CSS va chiroyli ichki SVG elementlaridan foydalaning. Tashqi internet rasmlariga umuman link bermang!
-            4. Javobingizda faqat va faqat toza HTML kod bo'lsin, hech qanday markdown belgilari (\`\`\`html) yoki qo'shimcha izohlar bo'lmasin. To'g'ridan-to'g'ri element kodlari qaytsin.`;
+            Format va Texnik talablar:
+            1. Posterning tomonlar nisbati aniq [ ${selectedRatio} ] formatda bo'lishi shart. Barcha matnlar va grafik elementlar shu blok ichiga sig'sin.
+            2. Poster markazida she'r sarlavhasi (${title}) va uning ostida she'r matni (${body}) to'liq, satrma-satr, nafis badiiy shriftda joylashsin.
+            3. Orqa fon uchun juda nafis va tekis gradientlar yoki minimalist klassik uslubdan foydalaning.
+            4. Chekkalarga milliy naqshlar, ramziy bezaklar qo'shish uchun faqat ichki inline CSS va murakkab SVG grafikalaridan foydalaning. Tashqi internet havolalaridan (img src) foydalanmang.
+            5. Javobingizda faqat va faqat toza HTML kod bo'lsin, hech qanday markdown belgilari (\`\`\`html) yoki qo'shimcha izohlar bo'lmasin.`;
 
             try {
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${key}`;
@@ -445,11 +497,11 @@
                 const data = await response.json();
                 
                 if (!data.candidates || data.candidates.length === 0) {
-                    throw new Error("Gemini javob qaytara olmadi. Kontent bloklangan bo'lishi mumkin.");
+                    throw new Error("Gemini javob qaytara olmadi.");
                 }
 
-                let aiHtml = data.candidates[0].content.parts[0].text;
-                aiHtml = aiHtml.replace(/```html/g, "").replace(/```/g, "").trim();
+                rawAiHtml = data.candidates[0].content.parts[0].text;
+                rawAiHtml = rawAiHtml.replace(/```html/g, "").replace(/```/g, "").trim();
                 
                 const iframe = document.createElement('iframe');
                 iframe.style.width = '100%';
@@ -460,18 +512,63 @@
                 
                 const doc = iframe.contentWindow.document;
                 doc.open();
-                doc.write(`<html><head><style>body{margin:0; padding:0; height:100vh; overflow:hidden; display:flex; justify-content:center; align-items:center; background:#fff;}</style></head><body>${aiHtml}</body></html>`);
+                doc.write(`<html><head><style>body{margin:0; padding:0; height:100vh; overflow:hidden; display:flex; justify-content:center; align-items:center; background:#fff;}</style></head><body>${rawAiHtml}</body></html>`);
                 doc.close();
 
             } catch (error) {
                 console.error(error);
                 posterPreview.innerHTML = `
                     <div style='padding:30px; color:#d32f2f; text-align:center; font-size:14px;'>
-                        <strong style='font-size:16px;'>Xatolik yuz berdi!</strong><br><br>
-                        Sabab: ${error.message}<br><br>
-                        <span style='color:var(--text-muted); font-size:12px;'>Iltimos, API kalit va internet aloqasini tekshiring.</span>
+                        <strong style='font-size:16px;'>Xatolik!</strong><br><br>
+                        Sabab: ${error.message}
                     </div>`;
             }
+        });
+
+        // PNG / JPEG RASM SHAKLIDA YUKLAB OLISH FUNKSIYASI
+        document.getElementById('downloadPosterBtn').addEventListener('click', () => {
+            if (!rawAiHtml) { alert("Avval posterni render qiling!"); return; }
+
+            // 1. Yashirin render blokini tozalash va o'lchamlarini nisbatga qarab sozlash
+            sandboxContainer.innerHTML = rawAiHtml;
+            const targetEl = sandboxContainer.firstElementChild;
+            
+            if (!targetEl) { alert("Render kodini o'qib bo'lmadi."); return; }
+
+            // Nisbatga qarab eksport o'lchamini aniqlash (yuqori aniqlik uchun asos 1200px)
+            const ratioValues = posterRatio.value.split('/');
+            const width = 1200;
+            const height = Math.round(width * (parseFloat(ratioValues[1]) / parseFloat(ratioValues[0])));
+
+            targetEl.style.width = width + "px";
+            targetEl.style.height = height + "px";
+            targetEl.style.position = "relative";
+
+            const selectedFormat = exportFormat.value; // 'png' yoki 'jpeg'
+            const mimeType = selectedFormat === 'png' ? 'image/png' : 'image/jpeg';
+            const extension = selectedFormat === 'png' ? '.png' : '.jpg';
+
+            // 2. Kutubxona yordamida DOM elementni rasmga o'tkazish
+            html2canvas(targetEl, {
+                width: width,
+                height: height,
+                scale: 2, // Sifatni yanada mukammal qilish uchun (Retina effekt)
+                useCORS: true,
+                allowTaint: true
+            }).then(canvas => {
+                const imgData = canvas.toDataURL(mimeType, 0.95);
+                
+                // Yuklab olish havolasini yaratish
+                const a = document.createElement('a');
+                a.href = imgData;
+                a.download = (poemTitle.value.trim() || 'poster') + extension;
+                a.click();
+
+                // Tozalash
+                sandboxContainer.innerHTML = "";
+            }).catch(err => {
+                alert("Rasmga aylantirishda xatolik yuz berdi: " + err.message);
+            });
         });
 
         document.getElementById('closeModalBtn').addEventListener('click', () => posterModal.style.display = 'none');
