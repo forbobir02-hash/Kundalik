@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Devoni Ilhom AI // API Tekshiruvchi</title>
+    <title>Devoni Ilhom AI // Pro Studiya</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Georgia', serif; }
         
@@ -214,6 +214,12 @@
             background: white; border-radius: 4px; overflow: hidden;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
+
+        @media print {
+            body * { visibility: hidden; }
+            .poster-preview-area, .poster-preview-area * { visibility: visible; }
+            .poster-preview-area { position: absolute; left: 0; top: 0; width: 100%; height: 100%; border: none; }
+        }
     </style>
 </head>
 <body>
@@ -222,7 +228,7 @@
     <div class="sidebar">
         <div class="sidebar-header">
             <h2>Devoni Ilhom AI</h2>
-            <p>API Modellarini Tekshirish Paneli</p>
+            <p>Sun'iy Intellekt Integratsiyasi</p>
         </div>
 
         <div class="api-box">
@@ -257,14 +263,14 @@
             <div class="top-bar">
                 <div class="action-group">
                     <button class="btn" id="savePoemBtn" style="padding: 10px 25px;">💾 Saqlash</button>
-                    <button class="btn ai-btn" id="generatePosterBtn">🔍 Kalit Ruxsatlarini Tekshirish</button>
+                    <button class="btn ai-btn" id="generatePosterBtn">✨ AI Poster Yasash</button>
                 </div>
                 <button class="btn del-btn" id="deletePoemBtn">O'chirish</button>
             </div>
             
             <div class="poem-editor">
-                <input type="text" class="input-title" id="poemTitle" placeholder="Sarlavha..." value="Tekshiruv Test">
-                <textarea class="textarea-body" id="poemBody" placeholder="API tekshirish uchun biron nima yozing...">API tekshirish uchun namuna matn...</textarea>
+                <input type="text" class="input-title" id="poemTitle" placeholder="Sarlavha...">
+                <textarea class="textarea-body" id="poemBody" placeholder="She'ringizni shu yerga yozing..."></textarea>
                 
                 <div class="audio-section">
                     <button class="rec-btn" id="recordAudioBtn">REC</button>
@@ -278,10 +284,11 @@
     <!-- MODAL -->
     <div class="modal" id="posterModal">
         <div class="modal-content">
-            <h3 style="text-align:center; color: var(--accent-gold);">Ruxsat Berilgan Modellar</h3>
+            <h3 style="text-align:center; color: var(--accent-gold);">Gemini San'at Asari</h3>
             <div class="poster-preview-area" id="posterPreview"></div>
             <div class="btn-group-row">
-                <button class="btn del-btn" id="closeModalBtn" style="flex:1;">Oynani Yopish</button>
+                <button class="btn" id="printPosterBtn" style="flex:1;">🖨️ PDF / Yuklab Olish</button>
+                <button class="btn del-btn" id="closeModalBtn" style="flex:1;">Yopish</button>
             </div>
         </div>
     </div>
@@ -327,7 +334,7 @@
 
         function initNewPoem() {
             currentPoemId = 'poem_' + Date.now();
-            poemTitle.value = 'Tekshiruv Test'; poemBody.value = 'API tekshirish uchun namuna matn...'; currentAudioBlob = null;
+            poemTitle.value = ''; poemBody.value = ''; currentAudioBlob = null;
             audioPlayer.style.display = 'none'; audioStatus.textContent = "Ovoz yozilmagan";
             document.querySelectorAll('.poem-item').forEach(i => i.classList.remove('active'));
         }
@@ -352,29 +359,76 @@
             const meta = { id: currentPoemId, title: poemTitle.value.trim() || 'Sarlavhasiz', date: new Date().toLocaleDateString('uz-UZ'), body: poemBody.value, hasAudio: currentAudioBlob !== null || (idx > -1 && poems[idx].hasAudio) };
             if(idx > -1) poems[idx] = meta; else poems.unshift(meta);
             localStorage.setItem('poems_meta_ai', JSON.stringify(poems));
+            if (currentAudioBlob) {
+                const tx = db.transaction(["audios"], "readwrite");
+                tx.objectStore("audios").put({ id: currentPoemId, blob: currentAudioBlob });
+            }
             renderPoemList();
+            alert("Muvaffaqiyatli saqlandi!");
         }
 
         function loadPoem(id) {
             currentPoemId = id; const poem = poems.find(p => p.id === id); if(!poem) return;
             poemTitle.value = poem.title; poemBody.value = poem.body;
             renderPoemList();
+            audioPlayer.style.display = 'none'; audioStatus.textContent = "Kuting...";
+            const tx = db.transaction(["audios"], "readonly");
+            tx.objectStore("audios").get(id).onsuccess = (e) => {
+                if(e.target.result) {
+                    currentAudioBlob = e.target.result.blob;
+                    audioPlayer.src = URL.createObjectURL(currentAudioBlob);
+                    audioPlayer.style.display = 'block'; audioStatus.textContent = "🎙️ Bayt tinglash:";
+                } else audioStatus.textContent = "Ovoz yozilmagan";
+            };
         }
 
-        // ListModels API so'rovi orqali ruxsatlarni aniqlash qismi
+        recordAudioBtn.addEventListener('click', async () => {
+            if (!mediaRecorder || mediaRecorder.state === "inactive") {
+                audioChunks = [];
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                    mediaRecorder.onstop = () => {
+                        currentAudioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+                        audioPlayer.src = URL.createObjectURL(currentAudioBlob); audioPlayer.style.display = 'block';
+                        audioStatus.textContent = "Ovoz muhrlandi (Saqlashni bosing)";
+                        stream.getTracks().forEach(t => t.stop());
+                    };
+                    mediaRecorder.start(); recordAudioBtn.textContent = "STOP"; recordAudioBtn.classList.add('recording');
+                    audioStatus.textContent = "🔴 Ovoz yozilmoqda...";
+                } catch (err) { alert("Mikrofonga ruxsat berilmadi!"); }
+            } else { mediaRecorder.stop(); recordAudioBtn.textContent = "REC"; recordAudioBtn.classList.remove('recording'); }
+        });
+
+        // Mutlaqo yangi va ro'yxatda mavjud bo'lgan gemini-3.5-flash modeliga integratsiya
         document.getElementById('generatePosterBtn').addEventListener('click', async () => {
             const key = geminiApiKey.value.trim();
+            const title = poemTitle.value.trim() || 'Sarlavhasiz';
+            const body = poemBody.value.trim();
 
             if (!key) { alert("Iltimos, avval chap paneldagi katakka Gemini API kalitingizni kiriting!"); return; }
+            if (!body) { alert("Poster yaratish uchun avval she'r matnini yozing!"); return; }
 
-            posterPreview.innerHTML = "<div style='padding:40px; text-align:center; color:#b38f43; font-style:italic;'>🔍 Google AI Studio hisobingiz tahlil qilinmoqda va ruxsat etilgan modellar ro'yxati yuklanmoqda...</div>";
+            posterPreview.innerHTML = "<div style='padding:40px; text-align:center; color:#b38f43; font-style:italic;'>🤖 Yangi Gemini 3.5 modeli she'rni vizual san'at asariga aylantirmoqda...</div>";
             posterModal.style.display = 'flex';
 
+            const promptText = `Siz professional grafik dizaynersiz. Sizga taqdim etilgan o'zbekcha she'r mazmunidan kelib chiqib, bitta chiroyli mustaqil HTML va inline CSS kodli vizual poster blok yarating.
+            Shartlar:
+            1. Faqat bitta container div ichida barcha dizayn tugallangan bo'lsin. Fon ranglari, gradientlar, nozik nafis oltin yoki pastel ranglar palitrasi orqali she'r kayfiyatini ko'rsating.
+            2. Blok ichida she'rning sarlavhasi "${title}" va she'r matni joylashsin. Matn mukammal joylashtirilsin.
+            3. Naqshlar yoki mavzuga mos ramziy grafik elementlar uchun inline CSS va chiroyli ichki SVG elementlaridan foydaning. Tashqi internet rasmlariga link bermang.
+            4. Javobingizda faqat va faqat toza HTML kod bo'lshin, hech qanday markdown belgilari (\`\`\`html) yoki qo'shimcha izohlar bo'lmasin.`;
+
             try {
-                // Kalitga tegishli barcha modellarni so'rab olish
-                const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${key}`;
+                // Yangi va sizda faol bo'lgan model manzili
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${key}`;
                 
-                const response = await fetch(url, { method: "GET" });
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+                });
 
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
@@ -382,48 +436,59 @@
                 }
 
                 const data = await response.json();
-                console.log("Ruxsat berilgan modellar ro'yxati:", data);
-
-                if (data.models && data.models.length > 0) {
-                    // Kontent yarata oladigan (generateContent) modellarni saralash
-                    const validModels = data.models
-                        .filter(m => m.supportedGenerationMethods.includes("generateContent"))
-                        .map(m => m.name.replace("models/", ""))
-                        .sort();
-
-                    let htmlList = "<ol style='padding-left:20px; line-height:2;'>";
-                    validModels.forEach(modelName => {
-                        htmlList += `<li style='margin-bottom:8px;'><code>${modelName}</code></li>`;
-                    });
-                    htmlList += "</ol>";
-
-                    posterPreview.innerHTML = `
-                        <div style='padding:25px; color:var(--text-main); font-size:14px; text-align:left; overflow-y:auto; height:100%;'>
-                            <p style='color:#b38f43; font-weight:bold; margin-bottom:15px; font-size:15px;'>Sizning API kalitingiz quyidagi modellarni qo'llab-quvvatlaydi:</p>
-                            ${htmlList}
-                            <hr style='border:none; border-top:1px dashed var(--border-color); margin:15px 0;'>
-                            <span style='color:var(--text-muted); font-size:11px; display:block; line-height:1.4;'>
-                                💡 <strong>Maslahat:</strong> Yuqoridagi ro'yxatda chiqqan istalgan model nomidan koddagi model o'rnida foydalansangiz, xatolik mutlaqo yo'qoladi.
-                            </span>
-                        </div>`;
-                } else {
-                    posterPreview.innerHTML = "<div style='padding:30px; text-align:center; color:var(--danger-red);'>Kalitga tegishli faol modellar topilmadi.</div>";
+                
+                if (!data.candidates || data.candidates.length === 0) {
+                    throw new Error("Gemini javob qaytara olmadi. Kontent bloklangan bo'lishi mumkin.");
                 }
+
+                let aiHtml = data.candidates[0].content.parts[0].text;
+                
+                // Kodni tozalash va toza HTML holiga keltirish
+                aiHtml = aiHtml.replace(/```html/g, "").replace(/```/g, "").trim();
+                
+                const iframe = document.createElement('iframe');
+                iframe.style.width = '100%';
+                iframe.style.height = '100%';
+                iframe.style.border = 'none';
+                posterPreview.innerHTML = '';
+                posterPreview.appendChild(iframe);
+                
+                const doc = iframe.contentWindow.document;
+                doc.open();
+                doc.write(`<html><head><style>body{margin:0; padding:0; height:100vh; overflow:hidden; display:flex; justify-content:center; align-items:center; background:#fff;}</style></head><body>${aiHtml}</body></html>`);
+                doc.close();
 
             } catch (error) {
                 console.error(error);
                 posterPreview.innerHTML = `
                     <div style='padding:30px; color:#d32f2f; text-align:center; font-size:14px;'>
-                        <strong style='font-size:16px;'>Tekshirishda xatolik yuz berdi!</strong><br><br>
-                        Muammo turi: ${error.message}<br><br>
-                        <span style='color:var(--text-muted); font-size:12px;'>API kalit noto'g'ri kiritilgan yoki faol emas bo'lishi ham mumkin.</span>
+                        <strong style='font-size:16px;'>Xatolik yuz berdi!</strong><br><br>
+                        Sabab: ${error.message}<br><br>
+                        <span style='color:var(--text-muted); font-size:12px;'>Tavsiya: Muammo davom etsa, model nomini kod ichida "gemini-2.5-flash" ga o'zgartirib ko'ring.</span>
                     </div>`;
             }
         });
 
         document.getElementById('closeModalBtn').addEventListener('click', () => posterModal.style.display = 'none');
+        document.getElementById('printPosterBtn').addEventListener('click', () => {
+            const iframe = posterPreview.querySelector('iframe');
+            if(iframe) { iframe.contentWindow.print(); } else { window.print(); }
+        });
+
+        document.getElementById('exportJsonBtn').addEventListener('click', () => {
+            const blob = new Blob([JSON.stringify({ meta: poems })], { type: "application/json" });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+            a.download = `daftari_ilhom_backup.json`; a.click();
+        });
+        document.getElementById('deletePoemBtn').addEventListener('click', () => {
+            if(confirm("O'chirilsinmi?")) {
+                poems = poems.filter(p => p.id !== currentPoemId);
+                localStorage.setItem('poems_meta_ai', JSON.stringify(poems)); initNewPoem(); renderPoemList();
+            }
+        });
         document.getElementById('newPoemBtn').addEventListener('click', initNewPoem);
         document.getElementById('savePoemBtn').addEventListener('click', savePoem);
+        document.getElementById('searchInput').addEventListener('input', renderPoemList);
     </script>
 </body>
 </html>
