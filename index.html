@@ -401,7 +401,7 @@
             } else { mediaRecorder.stop(); recordAudioBtn.textContent = "REC"; recordAudioBtn.classList.remove('recording'); }
         });
 
-        // Hozirgi kunda eng faol va barqaror bo'lgan Gemini 2.0 Flash modeliga moslashtirilgan qism
+        // Eng barqaror va keng limitga ega bo'lgan gemini-1.5-flash modeliga moslashtirilgan qism
         document.getElementById('generatePosterBtn').addEventListener('click', async () => {
             const key = geminiApiKey.value.trim();
             const title = poemTitle.value.trim() || 'Sarlavhasiz';
@@ -410,7 +410,7 @@
             if (!key) { alert("Iltimos, avval chap paneldagi katakka Gemini API kalitingizni kiriting!"); return; }
             if (!body) { alert("Poster yaratish uchun avval she'r matnini yozing!"); return; }
 
-            posterPreview.innerHTML = "<div style='padding:40px; text-align:center; color:#b38f43; font-style:italic;'>🤖 Gemini 2.0 she'r mazmunini tahlil qilmoqda va unga mos grafik dizayn chizmoqda...</div>";
+            posterPreview.innerHTML = "<div style='padding:40px; text-align:center; color:#b38f43; font-style:italic;'>🤖 Gemini 1.5 she'r mazmunini tahlil qilmoqda va unga mos grafik dizayn chizmoqda...</div>";
             posterModal.style.display = 'flex';
 
             const promptText = `Siz professional grafik dizaynersiz. Sizga taqdim etilgan o'zbekcha she'r mazmunidan kelib chiqib, bitta chiroyli mustaqil HTML va inline CSS kodli vizual poster blok yarating.
@@ -421,8 +421,8 @@
             4. Javobingizda faqat va faqat toza HTML kod bo'lshin, hech qanday markdown belgilari (\`\`\`html) yoki qo'shimcha izohlar bo'lmasin.`;
 
             try {
-                // Yangi va faol model: gemini-2.0-flash
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
+                // Kvota muammosini chetlab o'tish uchun ishonchli model: gemini-1.5-flash
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
                 
                 const response = await fetch(url, {
                     method: "POST",
@@ -443,7 +443,7 @@
 
                 let aiHtml = data.candidates[0].content.parts[0].text;
                 
-                // Markdownlarni olib tashlash va kodni tozalash
+                // Kodni tozalash va toza HTML holiga keltirish
                 aiHtml = aiHtml.replace(/```html/g, "").replace(/```/g, "").trim();
                 
                 const iframe = document.createElement('iframe');
@@ -464,7 +464,7 @@
                     <div style='padding:30px; color:#d32f2f; text-align:center; font-size:14px;'>
                         <strong style='font-size:16px;'>Xatolik yuz berdi!</strong><br><br>
                         Sabab: ${error.message}<br><br>
-                        <span style='color:var(--text-muted); font-size:12px;'>Tavsiya: API kalit to'g'ri kiritilganini va AI Studio'da faol holatda ekanligini tekshiring.</span>
+                        <span style='color:var(--text-muted); font-size:12px;'>Tavsiya: Muammo davom etsa, Google AI Studio panelidan yangi API kalit yaratib ko'ring.</span>
                     </div>`;
             }
         });
