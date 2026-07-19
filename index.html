@@ -466,7 +466,7 @@
 
             posterPreview.innerHTML = "<div style='padding:40px; text-align:center; color:#b38f43; font-style:italic;'>🤖 Gemini format talablariga moslab she'riy grafik dizayn render qilmoqda...</div>";
 
-           const promptText = `Siz professional va yuqori darajadagi UI/UX hamda grafik dizaynersiz. Quyida taqdim etilgan o'zbekcha she'r matni va uning sarlavhasini diqqat bilan o'rganib chiqib, bitta ajoyib, mustaqil HTML va inline CSS kodli vizual poster yarating.
+          const promptText = `Siz professional va yuqori darajadagi UI/UX hamda grafik dizaynersiz. Quyida taqdim etilgan o'zbekcha she'r matni va uning sarlavhasini diqqat bilan o'rganib chiqib, bitta ajoyib, mustaqil HTML va inline CSS kodli vizual poster yarating.
 
             DIQQAT QAT'IY TALAB: Siz o'zingizdan yangi she'r yozmaysiz. Berilgan asl she'r matnini o'zgarishsiz, to'liqligicha poster ichiga joylashtirasiz.
 
@@ -474,16 +474,15 @@
             She'rning Asl Matni:
             ${body}
 
-            Vizual va Fon talablari (HAYOTIY MANZARALAR):
-            1. Shunchaki oddiy tekis fon yoki oddiy gradient ishlatmang! She'rning mazmuni va kayfiyatiga mos keladigan hayotiy manzara, tabiat ko'rinishi yoki kinematik muhit tasvirini to'liq CSS yordamida chizing.
-            2. Masalan: Murakkab CSS gradient qatlamlari (multiple gradients), "box-shadow", "clip-path" va nafis SVG elementlaridan foydalanib — yulduzli tungi osmon, uzoqdagi sokin tog'lar silueti, daraxt shoxlari, yomg'irli shahar ko'chasi chiroqlari, quyosh botishi yoki sokin kuz fasli kabi hayotiy, chuqur va atmosferik manzaralarni vizual aks ettiring.
-            3. Matn va manzara bir-biriga aralashib ketmasligi uchun matn joylashadigan markaziy qism ortiga biroz xiralashtirilgan (glassmorphism - backdrop-filter: blur) shaffof qatlam qo'shing.
+            Vizual va Fon talablari (REALISTIK HAYOTIY MANZARA):
+            1. Shunchaki oddiy tekis rangli fon ishlatmang! She'rning mazmuni, kayfiyati va ruhiga mos keladigan professional hayotiy manzara fotosuratidan foydalaning.
+            2. Buning uchun fon elementi (background-image) sifatida Unsplash havolasidan foydalaning: https://images.unsplash.com/photo-[kod] yoki shunchaki mavzuga mos Unsplash source havolasini kiriting (Masalan, she'r g'amgin bo'lsa yomg'irli shahar, kuz, yolg'iz yo'lak; sokin bo'lsa tungi osmon, tog'lar, dengiz manzarasi). Fon to'liq qoplanishi (background-size: cover; background-position: center;) shart.
+            3. DIQQAT: Matn hayotiy rasm fonida yo'qolib ketmasligi uchun, poster markazida matn ostiga alohida to'rtburchak blok joylashtiring va unga kuchli xiralashtirish effekti bering (backdrop-filter: blur(15px); background: rgba(0, 0, 0, 0.55); border: 1px solid rgba(255,255,255,0.1);). Matn ranglari oq yoki tillaraxsh bo'lib, rasm fonida juda aniq va yaqqol o'qilsin.
 
             Format va Texnik talablar:
             1. Posterning tomonlar nisbati aniq [ ${selectedRatio} ] formatda bo'lishi shart. Barcha grafikalar va she'r shu blok ichiga mukammal sig'ishi va chekkalari kesilib ketmasligi kerak.
-            2. Poster markazida she'r sarlavhasi (${title}) va uning ostida she'r matni (${body}) to'liq, satrma-satr, nafis badiiy shriftda joylashsin. Matn o'qilishi juda oson va vizual ustuvor bo'lsin.
-            3. Hech qanday tashqi internet havolalaridan (img src) foydalanmang. Barcha vizual tasvir va render faqat ichki CSS va SVG orqali yaratilishi shart.
-            4. Javobingizda faqat va faqat toza HTML kod bo'lsin, hech qanday markdown belgilari (\`\`\`html) yoki qo'shimcha izohlar bo'lmasin.`;
+            2. Poster markazida she'r sarlavhasi (${title}) va uning ostida she'r matni (${body}) to'liq, satrma-satr, nafis badiiy shriftda joylashsin.
+            3. Javobingizda faqat va faqat toza HTML kod bo'lsin, hech qanday markdown belgilari (\`\`\`html) yoki qo'shimcha izohlar bo'lmasin.`;
 
             try {
                 // MODEL NOMI GEMINI 3.5 FLASH GA YANGILANDI
