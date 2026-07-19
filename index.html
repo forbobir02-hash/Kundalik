@@ -455,7 +455,7 @@
             posterModal.style.display = 'flex';
         });
 
-        // AI RENDERING
+     // AI RENDERING (Gemini 3.5 versiyaga yangilangan shakli)
         document.getElementById('startAiRenderBtn').addEventListener('click', async () => {
             const key = geminiApiKey.value.trim();
             const title = poemTitle.value.trim() || 'Sarlavhasiz';
@@ -482,7 +482,8 @@
             5. Javobingizda faqat va faqat toza HTML kod bo'lsin, hech qanday markdown belgilari (\`\`\`html) yoki qo'shimcha izohlar bo'lmasin.`;
 
             try {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
+                // MODEL NOMI GEMINI 3.5 FLASH GA YANGILANDI
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${key}`;
                 
                 const response = await fetch(url, {
                     method: "POST",
