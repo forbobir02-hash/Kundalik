@@ -3,27 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sheriy Poster & Audio Log Generator v6</title>
-    <!-- Barqaror va mustahkam Tailwind CSS CDN (v3) -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Sheriy Poster Generator v3</title>
+    <!-- Google Fonts va TailwindCSS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <!-- html2canvas Kutubxonasi -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body {
-            background: radial-gradient(circle at top, #1e1b4b 0%, #0f172a 100%);
+            background-color: #0f172a;
             color: #f8fafc;
-            min-height: 100vh;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
         }
-        /* Gradient Neon Border effekti */
-        .neon-card {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        }
+        /* Loader stilizatsiyasi */
         .loader {
             border: 4px solid rgba(255, 255, 255, 0.1);
-            border-left-color: #6366f1;
+            border-left-color: #3b82f6;
             border-radius: 50%;
             width: 40px;
             height: 40px;
@@ -33,18 +27,18 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        /* Preview maydoni cheklovlari */
         #posterPreview {
             max-width: 100%;
             max-height: 70vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #0f172a;
+            background: #1e293b;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            border-radius: 12px;
+            border-radius: 8px;
             overflow: hidden;
             transition: all 0.3s ease;
-            border: 1px solid rgba(255, 255, 255, 0.1);
         }
         #posterPreview iframe {
             width: 100%;
@@ -54,114 +48,81 @@
         }
     </style>
 </head>
-<body class="flex flex-col items-center justify-center p-4 md:p-8">
+<body class="min-h-screen flex flex-col items-center p-4 md:p-8">
 
-    <main class="w-full max-w-4xl neon-card rounded-3xl p-6 md:p-8 my-auto">
+    <main class="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-2xl">
         <header class="text-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-black bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-2 tracking-wide">
-                Sheriy Poster & Audio Generator
-            </h1>
-            <p class="text-slate-400 text-sm md:text-base">Sheringizni kiriting, ijro etib ovoz yozing va sun'iy intellekt yordamida kreativ poster yarating.</p>
+            <h1 class="text-3xl font-extrabold text-blue-400 mb-2">Sheriy Poster Generator</h1>
+            <p class="text-slate-400">Sheringizni kiriting va sun'iy intellekt yordamida ajoyib poster dizayniga ega bo'ling.</p>
         </header>
 
-        <!-- INPUT VA OVOZ YOZISH INTERFEYSI -->
+        <!-- INPUT FORMASI -->
         <div class="space-y-6">
             <div>
-                <label for="poemTitle" class="block text-xs font-semibold uppercase tracking-wider text-indigo-300 mb-2">Sher sarlavhasi (ixtiyoriy)</label>
-                <input type="text" id="poemTitle" placeholder="Masalan: Xotira..." class="w-full bg-slate-900/60 border border-slate-700/50 rounded-xl px-4 py-3 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors focus:ring-1 focus:ring-indigo-500">
+                <label for="poemTitle" class="block text-sm font-medium text-slate-300 mb-2">Sher sarlavhasi (ixtiyoriy)</label>
+                <input type="text" id="poemTitle" placeholder="Masalan: Xotira..." class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500 transition-colors">
             </div>
 
             <div>
-                <label for="poemText" class="block text-xs font-semibold uppercase tracking-wider text-indigo-300 mb-2">Sher matni *</label>
-                <textarea id="poemText" rows="6" placeholder="Bu yerga sheringizni kiriting yoki nusxalab joylashtiring..." class="w-full bg-slate-900/60 border border-slate-700/50 rounded-xl px-4 py-3 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors resize-y focus:ring-1 focus:ring-indigo-500"></textarea>
+                <label for="poemText" class="block text-sm font-medium text-slate-300 mb-2">Sher matni *</label>
+                <textarea id="poemText" rows="6" placeholder="Bu yerga sheringizni kiriting yoki nusxalab joylashtiring..." class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500 transition-colors resize-y"></textarea>
             </div>
 
-            <!-- OVOZ YOZISH BO'LIMI (AVVALGI SHINNAM DIZAYNDA) -->
-            <div class="bg-slate-950/60 border border-indigo-950/80 p-5 rounded-2xl space-y-4 shadow-inner">
-                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                    <span class="text-xs font-semibold uppercase tracking-wider text-purple-300 flex items-center gap-2">
-                        <span class="flex h-2 w-2 relative">
-                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
-                            <span class="relative inline-flex rounded-full h-2 w-2 bg-purple-500"></span>
-                        </span>
-                        Sher uchun audio log (Ovoz yozuvi)
-                    </span>
-                    <span id="recordTimer" class="text-sm text-red-400 font-mono bg-red-950/50 px-2.5 py-0.5 rounded-full border border-red-800/40 hidden animate-pulse">00:00</span>
-                </div>
-                
-                <div class="flex flex-wrap items-center gap-4">
-                    <button id="startRecordBtn" class="bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white font-medium py-2.5 px-5 rounded-xl flex items-center space-x-2 transition-all transform hover:scale-[1.02] shadow-lg shadow-red-900/20 cursor-pointer">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 01-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd"></path></svg>
-                        <span>Ovoz yozishni boshlash</span>
-                    </button>
-                    
-                    <button id="stopRecordBtn" class="bg-slate-800 hover:bg-slate-700 text-white font-medium py-2.5 px-5 rounded-xl flex items-center space-x-2 transition-all transform hover:scale-[1.02] border border-slate-700 cursor-pointer hidden">
-                        <svg class="w-5 h-5 text-red-400 animate-pulse" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd"></path></svg>
-                        <span>Yozuvni to'xtatish</span>
-                    </button>
-
-                    <div id="audioPlaybackContainer" class="flex-1 min-w-[240px] hidden bg-slate-900/80 p-1.5 rounded-xl border border-slate-800 flex items-center">
-                        <audio id="audioPlayback" controls class="w-full h-8 accent-indigo-500"></audio>
-                    </div>
-                </div>
-            </div>
-
-            <!-- POSTER NISBATLARI VA FORMATLAR -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label for="posterRatio" class="block text-xs font-semibold uppercase tracking-wider text-indigo-300 mb-2">Poster o'lchami (Nisbat)</label>
-                    <select id="posterRatio" class="w-full bg-slate-900/60 border border-slate-700/50 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors">
+                    <label for="posterRatio" class="block text-sm font-medium text-slate-300 mb-2">Poster o'lchami (Nisbat)</label>
+                    <select id="posterRatio" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500 transition-colors">
                         <option value="1/1">1:1 (Kvadrat - Instagram / Telegram)</option>
                         <option value="4/5" selected>4:5 (Portret - Instagram Post)</option>
                         <option value="9/16">9:16 (Tik - Story / Reels / Shorts)</option>
                     </select>
                 </div>
                 <div>
-                    <label for="exportFormat" class="block text-xs font-semibold uppercase tracking-wider text-indigo-300 mb-2">Yuklab olish formati</label>
-                    <select id="exportFormat" class="w-full bg-slate-900/60 border border-slate-700/50 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors">
+                    <label for="exportFormat" class="block text-sm font-medium text-slate-300 mb-2">Yuklab olish formati</label>
+                    <select id="exportFormat" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500 transition-colors">
                         <option value="png" selected>PNG (Yuqori sifat)</option>
                         <option value="jpeg">JPEG (Kichik hajm)</option>
                     </select>
                 </div>
             </div>
 
-            <button id="generateBtn" class="w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:to-purple-700 hover:to-pink-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-xl hover:shadow-indigo-500/20 transition-all transform hover:scale-[1.01] cursor-pointer flex items-center justify-center space-x-2">
-                <span>Posterni loyihalash (AI AI)</span>
+            <button id="generateBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-blue-500/20 transition-all cursor-pointer flex items-center justify-center space-x-2">
+                <span>Posterni loyihalash (AI)</span>
             </button>
         </div>
     </main>
 
     <!-- LOADING MODAL -->
     <div id="loadingModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50">
-        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col items-center space-y-4 shadow-2xl max-w-xs w-full mx-4">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl flex flex-col items-center space-y-4 shadow-2xl max-w-xs w-full mx-4">
             <div class="loader"></div>
-            <p class="text-slate-300 font-medium text-center">Sun'iy intellekt jozibador dizayn yaratmoqda...</p>
+            <p class="text-slate-300 font-medium text-center" id="loadingText">Sun'iy intellekt poster dizaynini yaratmoqda...</p>
         </div>
     </div>
 
-    <!-- PREVIEW MODALI -->
+    <!-- PREVIEW VA YUKLAB OLISH MODALI -->
     <div id="posterModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4 z-40">
         <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-2xl flex flex-col max-h-[90vh] shadow-2xl overflow-hidden">
             
             <!-- Modal Header -->
             <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
                 <h3 class="font-bold text-lg text-slate-200">Tayyor poster ko'rinishi</h3>
-                <button id="closeModalBtn" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 text-2xl transition-colors cursor-pointer">&times;</button>
+                <button id="closeModalBtn" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer">&times;</button>
             </div>
 
-            <!-- Modal Body -->
+            <!-- Modal Body (Preview maydoni) -->
             <div class="flex-1 overflow-y-auto p-6 flex items-center justify-center bg-slate-950">
                 <div id="posterPreview">
-                    <!-- Iframe yuklanadi -->
+                    <!-- Iframe dinamik ravishda shu yerga joylashadi -->
                 </div>
             </div>
 
-            <!-- Modal Footer -->
+            <!-- Modal Footer (Amallar) -->
             <div class="p-4 border-t border-slate-800 grid grid-cols-2 gap-4 bg-slate-900/50">
-                <button id="regenerateBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium py-2.5 px-4 rounded-xl transition-colors cursor-pointer">
+                <button id="regenerateBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium py-2.5 px-4 rounded-lg transition-colors cursor-pointer">
                     Qayta yuklash
                 </button>
-                <button id="downloadPosterBtn" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold py-2.5 px-4 rounded-xl shadow-lg hover:shadow-emerald-500/20 transition-all cursor-pointer">
+                <button id="downloadPosterBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 px-4 rounded-lg shadow-lg hover:shadow-emerald-500/20 transition-all cursor-pointer">
                     Rasm qilib saqlash
                 </button>
             </div>
@@ -169,6 +130,7 @@
     </div>
 
     <script>
+        // Loyihaning barcha o'zgaruvchilari
         let rawAiHtml = ""; 
         const API_KEY = "Sizning_Gemini_API_Kalingizni_Shu_Yerga_Qo'ying"; // O'z kalitingizni kiriting
 
@@ -186,73 +148,13 @@
         const posterModal = document.getElementById('posterModal');
         const posterPreview = document.getElementById('posterPreview');
 
-        // Audio elementlar
-        const startRecordBtn = document.getElementById('startRecordBtn');
-        const stopRecordBtn = document.getElementById('stopRecordBtn');
-        const recordTimer = document.getElementById('recordTimer');
-        const audioPlaybackContainer = document.getElementById('audioPlaybackContainer');
-        const audioPlayback = document.getElementById('audioPlayback');
-
-        let mediaRecorder;
-        let audioChunks = [];
-        let timerInterval;
-        let startTime;
-
-        // OVOZ YOZISH LOGIKASI
-        startRecordBtn.addEventListener('click', async () => {
-            audioChunks = [];
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-                
-                mediaRecorder.ondataavailable = (event) => {
-                    audioChunks.push(event.data);
-                };
-
-                mediaRecorder.onstop = () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
-                    const audioUrl = URL.createObjectURL(audioBlob);
-                    audioPlayback.src = audioUrl;
-                    audioPlaybackContainer.classList.remove('hidden');
-                };
-
-                mediaRecorder.start();
-                
-                startRecordBtn.classList.add('hidden');
-                stopRecordBtn.classList.remove('hidden');
-                recordTimer.classList.remove('hidden');
-                
-                startTime = Date.now();
-                recordTimer.textContent = "00:00";
-                timerInterval = setInterval(() => {
-                    const elapsedTime = Date.now() - startTime;
-                    const secs = Math.floor((elapsedTime / 1000) % 60).toString().padStart(2, '0');
-                    const mins = Math.floor((elapsedTime / 1000 / 60) % 60).toString().padStart(2, '0');
-                    recordTimer.textContent = `${mins}:${secs}`;
-                }, 1000);
-
-            } catch (err) {
-                alert("Mikrofon yoqilmadi: " + err.message);
-            }
-        });
-
-        stopRecordBtn.addEventListener('click', () => {
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.stop();
-                mediaRecorder.stream.getTracks().forEach(track => track.stop());
-            }
-            clearInterval(timerInterval);
-            startRecordBtn.classList.remove('hidden');
-            stopRecordBtn.classList.add('hidden');
-            recordTimer.classList.add('hidden');
-        });
-
-        // PREVIEW ASPECT RATIO SOZLAMALARI
+        // Tomonlar nisbatini o'zgartirish qoidasi
         function updatePreviewRatio() {
             const ratioValues = posterRatio.value.split('/');
             const wRatio = parseFloat(ratioValues[0]);
             const hRatio = parseFloat(ratioValues[1]);
             
+            // Preview konteynerining vizual o'lchamlarini moslaymiz
             posterPreview.style.aspectRatio = `${wRatio} / ${hRatio}`;
             
             if (posterRatio.value === "1/1") {
@@ -267,18 +169,25 @@
             }
         }
 
+        // Nisbat o'zgarganda vizual maydonni moslashtirish
         posterRatio.addEventListener('change', updatePreviewRatio);
+
+        // Generatsiya boshlash amali
         generateBtn.addEventListener('click', callGeminiAi);
         regenerateBtn.addEventListener('click', callGeminiAi);
-        closeModalBtn.addEventListener('click', () => { posterModal.style.display = 'none'; });
 
-        // GEMINI AI INTEGRATSIYA
+        // Modalni yopish
+        closeModalBtn.addEventListener('click', () => {
+            posterModal.style.display = 'none';
+        });
+
+        // AI bilan aloqa funksiyasi
         async function callGeminiAi() {
             const text = poemText.value.trim();
             const title = poemTitle.value.trim();
 
             if (!text) {
-                alert("Iltimos, avval sher matnini yozing!");
+                alert("Iltimos, avval poster uchun sher matnini kiriting!");
                 return;
             }
 
@@ -289,7 +198,7 @@
             MUHIM QOIDALAR:
             1. Faqat va faqat toza, hech qanday markdown belgilari (masalan \`\`\`html kabi) bo'lmagan yagona HTML kodini qaytaring. Kod <!DOCTYPE html> bilan boshlanib </html> bilan tugasin.
             2. Dizaynda zamonaviy, jozibador va sher mazmuniga mos keladigan ranglar palitrasi, nafis foni (gradientlar, geometrik yoki mavhum shakllar, naqshlar) hamda professional tipografikadan foydalaning.
-            3. Poster har qanday o'lchamga moslashuvchan bo'lishi shart. Buning uchun asosiy dizayn konteynera (wrapper) butun body elementini to'liq egallashi kerak (width: 100%; height: 100%; min-height: 100vh;). Hech qanday "max-width: 500px" yoki "margin: 0 auto" kabi elementni markazda qisib qo'yuvchi qoidalarni ishlatmang! Dizayn cheksiz cho'ziluvchan bo'lsin.
+            3. Poster har qanday o'lchamga moslashuvchan bo'lishi shart. Buning uchun asosiy dizayn konteyneri (wrapper) butun body elementini to'liq egallashi kerak (width: 100%; height: 100%; min-height: 100vh;). Hech qanday "max-width: 500px" yoki "margin: 0 auto" kabi elementni markazda qisib qo'yuvchi qoidalarni ishlatmang! Dizayn cheksiz cho'ziluvchan bo'lsin.
             4. Sher matnini chiroyli tarzda markazlashtiring, qator tashlashlarni (<br>) saqlab qoling. Matn o'qilishi juda oson, kontrast darajasi yuqori bo'lsin.
             5. Borderlar, neon effektlari va soyalardan unumli foydalaning.`;
 
@@ -302,7 +211,10 @@
                     body: JSON.stringify({
                         contents: [{
                             role: 'user',
-                            parts: [ { text: systemPrompt }, { text: userPrompt } ]
+                            parts: [
+                                { text: systemPrompt },
+                                { text: userPrompt }
+                            ]
                         }]
                     })
                 });
@@ -311,6 +223,8 @@
                 
                 if (data.candidates && data.candidates[0].content.parts[0].text) {
                     let aiCode = data.candidates[0].content.parts[0].text.trim();
+                    
+                    // Har qanday markdown formatlash belgilarini tozalash
                     if (aiCode.startsWith('```html')) aiCode = aiCode.substring(7);
                     if (aiCode.endsWith('```')) aiCode = aiCode.substring(0, aiCode.length - 3);
                     
@@ -327,35 +241,44 @@
             }
         }
 
+        // Iframe ichiga HTML kodni xavfsiz va to'g'ri render qilish
         function renderPoster(htmlContent) {
-            posterPreview.innerHTML = ""; 
+            posterPreview.innerHTML = ""; // Avvalgi elementlarni tozalash
+            
             const iframe = document.createElement('iframe');
             posterPreview.appendChild(iframe);
-            updatePreviewRatio(); 
+            
+            updatePreviewRatio(); // Nisbatni to'g'rilash
 
             const doc = iframe.contentWindow.document;
             doc.open();
             doc.write(htmlContent);
             doc.close();
 
+            // Asosiy modalni ko'rsatish
             posterModal.style.display = 'flex';
         }
 
-        // QORA CHEKKALARSIZ EXPORT TIZIMI
+
+        // =========================================================================
+        // MULTAQO YANGI, SANDBOX-SIZ VA KAFOLATLANGAN RASM YUKLASH TIZIMI
+        // =========================================================================
         downloadPosterBtn.addEventListener('click', async () => {
             if (!rawAiHtml) { alert("Avval posterni render qiling!"); return; }
 
             const ratioValues = posterRatio.value.split('/');
-            const scale = 2; 
+            const scale = 2; // Rasm sifatini yuqori aniqlikda (HQ) qilish
             const width = 1200 * scale; 
             const height = Math.round(width * (parseFloat(ratioValues[1]) / parseFloat(ratioValues[0])));
 
             const iframe = posterPreview.querySelector('iframe');
-            if (!iframe) { alert("Xatolik: Poster render qilinmagan."); return; }
+            if (!iframe) { alert("Xatolik: Poster maydoni topilmadi."); return; }
 
+            // Vaqtincha modalni yashiramiz va preview elementini ekran bo'ylab majburlab cho'zamiz
             posterModal.style.display = 'none';
-            document.body.style.overflow = 'auto'; 
+            document.body.style.overflow = 'auto'; // Suratga olish vaqtida skroll muammolarini yopish
             
+            // Elementni majburiy ravishda yuqori pikselli o'lchamga o'tkazamiz
             posterPreview.style.position = 'fixed';
             posterPreview.style.top = '0';
             posterPreview.style.left = '0';
@@ -370,9 +293,13 @@
             posterPreview.style.transform = 'scale(1)';
 
             try {
+                // Iframe ichidagi DOM to'liq joylashishi uchun 150ms kutish shart
                 await new Promise(r => setTimeout(r, 150));
+                
+                // Iframe ichidagi aynan body elementidan rasm olamiz (qisib turuvchi chekka o'lchamlarni yo'qotadi)
                 const targetElement = iframe.contentWindow.document.body;
 
+                // html2canvas sozlamalari
                 const canvas = await html2canvas(targetElement, {
                     width: width,
                     height: height,
@@ -388,16 +315,19 @@
                 const mimeType = selectedFormat === 'png' ? 'image/png' : 'image/jpeg';
                 const extension = selectedFormat === 'png' ? '.png' : '.jpg';
 
+                // Canvasni rasm ma'lumotlariga o'tkazish
                 const imgData = canvas.toDataURL(mimeType, 0.95);
                 
+                // Yuklab olish tugmasini simulyatsiya qilish
                 const a = document.createElement('a');
                 a.href = imgData;
                 a.download = (poemTitle.value.trim() || 'poster_sher') + extension;
                 a.click();
                 
             } catch (err) {
-                alert("Yuklashda muammo yuz berdi: " + err.message);
+                alert("Rasmga yuklash jarayonida texnik xatolik: " + err.message);
             } finally {
+                // Barcha elementlarni va modalni o'zining vizual holatiga qaytaramiz
                 posterPreview.style = '';
                 updatePreviewRatio(); 
                 posterModal.style.display = 'flex';
