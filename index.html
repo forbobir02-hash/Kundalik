@@ -401,7 +401,7 @@
             } else { mediaRecorder.stop(); recordAudioBtn.textContent = "REC"; recordAudioBtn.classList.remove('recording'); }
         });
 
-        // Mutlaqo yangi va ro'yxatda mavjud bo'lgan gemini-3.5-flash modeliga integratsiya
+        // TUZATILGAN GENERATSIYA TIZIMI
         document.getElementById('generatePosterBtn').addEventListener('click', async () => {
             const key = geminiApiKey.value.trim();
             const title = poemTitle.value.trim() || 'Sarlavhasiz';
@@ -410,18 +410,25 @@
             if (!key) { alert("Iltimos, avval chap paneldagi katakka Gemini API kalitingizni kiriting!"); return; }
             if (!body) { alert("Poster yaratish uchun avval she'r matnini yozing!"); return; }
 
-            posterPreview.innerHTML = "<div style='padding:40px; text-align:center; color:#b38f43; font-style:italic;'>🤖 Yangi Gemini 3.5 modeli she'rni vizual san'at asariga aylantirmoqda...</div>";
+            posterPreview.innerHTML = "<div style='padding:40px; text-align:center; color:#b38f43; font-style:italic;'>🤖 Gemini 3.5 siz yozgan she'r matnini chuqur tahlil qilib, unga mos vizual san'at asari yaratmoqda...</div>";
             posterModal.style.display = 'flex';
 
-            const promptText = `Siz professional grafik dizaynersiz. Sizga taqdim etilgan o'zbekcha she'r mazmunidan kelib chiqib, bitta chiroyli mustaqil HTML va inline CSS kodli vizual poster blok yarating.
-            Shartlar:
-            1. Faqat bitta container div ichida barcha dizayn tugallangan bo'lsin. Fon ranglari, gradientlar, nozik nafis oltin yoki pastel ranglar palitrasi orqali she'r kayfiyatini ko'rsating.
-            2. Blok ichida she'rning sarlavhasi "${title}" va she'r matni joylashsin. Matn mukammal joylashtirilsin.
-            3. Naqshlar yoki mavzuga mos ramziy grafik elementlar uchun inline CSS va chiroyli ichki SVG elementlaridan foydaning. Tashqi internet rasmlariga link bermang.
-            4. Javobingizda faqat va faqat toza HTML kod bo'lshin, hech qanday markdown belgilari (\`\`\`html) yoki qo'shimcha izohlar bo'lmasin.`;
+            // PROMPT YANGILANDI: Endi ${body} ham to'liq uzatiladi va yangi she'r to'qimaslik qat'iy talab qilinadi.
+            const promptText = `Siz professional grafik va badiiy dizaynersiz. Quyida taqdim etilgan o'zbekcha she'r matni va uning sarlavhasini chuqur o'rganib chiqib, she'rning haqiqiy ma'nosi, falsafasi va ichki kayfiyatini aks ettiruvchi bitta mukammal, mustaqil HTML va inline CSS kodli vizual poster blok yarating.
+
+            DIQQAT ENGL ASOSIY SHART: Siz mutlaqo o'zingizdan yangi she'r to'qimasligingiz shart! Quyida berilgan asl she'r matnini matnma-matn, satrma-satr o'zgarishsiz poster ichiga joylashtiring.
+
+            She'r Sarlavhasi: ${title}
+            She'rning Asl Matni:
+            ${body}
+
+            Dizayn talablari:
+            1. Butun poster faqat bitta asosiy container div ichida mukammal yakunlangan bo'lsin. Fon ranglari, chiroyli gradientlar, nozik nafis oltin yoki mavzu ruhiga mos keladigan pastel ranglar palitrasi orqali she'r kayfiyatini ko'rsating.
+            2. Blok markazida she'rning sarlavhasi (${title}) va uning ostida yuqoridagi she'r matni (${body}) to'liq, satrma-satr, chiroyli o'qiladigan va nafis shriftda (Georgia, serif yoki mukammal mos keluvchi shriftlar) joylashsin.
+            3. Poster atrofida milliy naqshlar, ramziy badiiy bezaklar yoki mavzuga mos ramziy grafik elementlar yaratish uchun faqat inline CSS va chiroyli ichki SVG elementlaridan foydalaning. Tashqi internet rasmlariga umuman link bermang!
+            4. Javobingizda faqat va faqat toza HTML kod bo'lsin, hech qanday markdown belgilari (\`\`\`html) yoki qo'shimcha izohlar bo'lmasin. To'g'ridan-to'g'ri element kodlari qaytsin.`;
 
             try {
-                // Yangi va sizda faol bo'lgan model manzili
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${key}`;
                 
                 const response = await fetch(url, {
@@ -442,8 +449,6 @@
                 }
 
                 let aiHtml = data.candidates[0].content.parts[0].text;
-                
-                // Kodni tozalash va toza HTML holiga keltirish
                 aiHtml = aiHtml.replace(/```html/g, "").replace(/```/g, "").trim();
                 
                 const iframe = document.createElement('iframe');
@@ -464,7 +469,7 @@
                     <div style='padding:30px; color:#d32f2f; text-align:center; font-size:14px;'>
                         <strong style='font-size:16px;'>Xatolik yuz berdi!</strong><br><br>
                         Sabab: ${error.message}<br><br>
-                        <span style='color:var(--text-muted); font-size:12px;'>Tavsiya: Muammo davom etsa, model nomini kod ichida "gemini-2.5-flash" ga o'zgartirib ko'ring.</span>
+                        <span style='color:var(--text-muted); font-size:12px;'>Iltimos, API kalit va internet aloqasini tekshiring.</span>
                     </div>`;
             }
         });
