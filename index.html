@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Qalb Daftari Pro // AI Ijodiy Studiyasi</title>
+    <title>Devoni Ilhom AI // Pro Studiya</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Georgia', serif; }
         
@@ -401,7 +401,7 @@
             } else { mediaRecorder.stop(); recordAudioBtn.textContent = "REC"; recordAudioBtn.classList.remove('recording'); }
         });
 
-        // YANGILANGAN VAXATOLIKLARNI ANIQLOVCHI GEMINI INTEGRATSIYASI
+        // TO'LIQLIGICHA STABLE V1 ENDPOINTIGA MOSLASHTIRILGAN FUNKSIYA
         document.getElementById('generatePosterBtn').addEventListener('click', async () => {
             const key = geminiApiKey.value.trim();
             const title = poemTitle.value.trim() || 'Sarlavhasiz';
@@ -421,8 +421,8 @@
             4. Javobingizda faqat va faqat toza HTML kod bo'lshin, hech qanday markdown belgilari (\`\`\`html) yoki qo'shimcha izohlar bo'lmasin.`;
 
             try {
-                // Eng barqaror oxirgi v1beta API versiyasi va gemini-1.5-flash modeli
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+                // Barqaror v1 modeli muvaffaqiyatli o'rnatildi
+                const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`;
                 
                 const response = await fetch(url, {
                     method: "POST",
@@ -443,7 +443,7 @@
 
                 let aiHtml = data.candidates[0].content.parts[0].text;
                 
-                // Kodni tozalash
+                // Markdown belgilarini tozalash
                 aiHtml = aiHtml.replace(/```html/g, "").replace(/```/g, "").trim();
                 
                 const iframe = document.createElement('iframe');
